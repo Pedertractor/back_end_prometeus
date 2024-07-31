@@ -1,0 +1,23 @@
+{
+  "name": "back-end-prometeus-v3",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "mqtt": "node --watch src/controllers/mqtt/controllerMqtt.js",
+    "mqtt2": "node --watch src/controllers/mqtt/controllerMqtt02.js",
+    "mqtt3": "node --watch src/controllers/mqtt/controllerMqtt03.js",
+    "start": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mqtt": "^5.6.2",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.14",
+    "prisma": "^5.14.0",
+    "uuid": "^9.0.1",
+    "ws": "^8.17.1"
+  }
+}

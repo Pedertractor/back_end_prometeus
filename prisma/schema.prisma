@@ -1,0 +1,48 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Prometeus {
+    id              String   @id @default(uuid())
+    prometeusCode   String
+    soldador        String
+    robo            String?
+    cartao          Int
+    setor           Int
+    gas             String
+    vazaoDoGas      String
+    diametroArame   String
+    velocidadeArame String
+    status          String?
+    localizationRow Int?
+    localizationCol Int?
+    createdAt       DateTime @default(now())
+
+    Welding Welding[]
+    Status  StopAnalysis[]
+}
+
+model Welding {
+    id        String    @id @default(uuid())
+    capture   String
+    amperagem Int
+    createdAt DateTime
+    weldingId String
+    prometeus Prometeus @relation(fields: [weldingId], references: [id])
+}
+
+model StopAnalysis {
+    id             Int      @id @default(autoincrement())
+    status         String
+    motivoDaParada String
+    createdAt      DateTime @default(now())
+    updateAt       DateTime @updatedAt
+
+    prometeusId String
+    prometeus   Prometeus @relation(fields: [prometeusId], references: [id])
+}
