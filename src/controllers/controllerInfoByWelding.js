@@ -10,6 +10,9 @@ const lastWeldBeadById = async (req, res) => {
       },
     });
 
+    const now = new Date();
+    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(now.setHours(23, 59, 59, 999));
     // const arrayDevicesId = allDevices.map((item) => item.id);
 
     const lastWeldBeadOccurances = await Promise.all(
@@ -17,6 +20,10 @@ const lastWeldBeadById = async (req, res) => {
         const lastWeldBead = await prisma.welding.findFirst({
           where: {
             weldingId: device.id,
+            createdAt: {
+              gte: startOfDay,
+              lte: endOfDay,
+            },
           },
           select: {
             capture: true,
