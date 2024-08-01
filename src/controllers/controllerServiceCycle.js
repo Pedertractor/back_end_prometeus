@@ -15,7 +15,7 @@ const getAllCicleWorkOrStop = async (req, res) => {
         id: true,
       },
     });
-
+    console.log('teste');
     const arrayDevicesId = allDevices.map((item) => item.id);
 
     const now = new Date();
