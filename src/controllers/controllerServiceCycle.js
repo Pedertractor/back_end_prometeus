@@ -13,16 +13,42 @@ const getAllCicleWorkOrStop = async (req, res) => {
     const allDevices = await prisma.prometeus.findMany({
       select: {
         id: true,
+        prometeusCode: true,
       },
     });
 
-    const arrayDevicesId = allDevices.map((item) => item.id);
+    // const arrayDevicesId = allDevices.map((item) => item.id);
 
     const now = new Date();
     const startOfDay = new Date(now.setHours(0, 0, 0, 0));
     const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
     const result = [];
+
+    // const weldBeadForDateRange = await Promise.all(
+    //   allDevices.map(async (device) => {
+    //     const weldings = await prisma.welding.findMany({
+    //       where: {
+    //         weldingId: device.id,
+    //       },
+    //       createdAt: {
+    //         gte: startOfDay,
+    //         lte: endOfDay,
+    //       },
+    //       orderBy: {
+    //         createdAt: 'asc',
+    //       },
+    //     });
+
+    //     if (!weldings) {
+    //       return null;
+    //     }
+
+    //     const weldingsBySquads = sliceSquadWeldings(weldings);
+    //     const teste = someForAllDevicesMinutesWorkorStopping(weldingsBySquads);
+    //     return { prometeus: device.prometeusCode, cycles: teste };
+    //   })
+    // );
 
     for (const id of arrayDevicesId) {
       const prometeus = await prisma.prometeus.findUnique({
@@ -57,6 +83,8 @@ const getAllCicleWorkOrStop = async (req, res) => {
     }
 
     res.status(200).json(result);
+    // console.log(weldBeadForDateRange);
+    res.status(200).json(weldBeadForDateRange);
   } catch (error) {
     console.log(error);
     res.status(404).json({

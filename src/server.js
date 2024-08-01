@@ -3,6 +3,7 @@ const cors = require('cors');
 const { apiRouter } = require('./router/routes');
 const { initializeWebSocket } = require('./services/websocketService');
 const { runAll } = require('./services/sendWebsocketInfo');
+require('dotenv').config();
 
 const app = express();
 
@@ -21,6 +22,7 @@ const serverRunning = app.listen(
   process.env.IP_SERVER,
   () => {
     console.log(`running! ${process.env.IP_SERVER}:${process.env.PORT}`);
+    console.log(process.env.PORT);
   }
 );
 
