@@ -17,49 +17,17 @@ const getAllCicleWorkOrStop = async (req, res) => {
       },
     });
 
-    // const arrayDevicesId = allDevices.map((item) => item.id);
-
     const now = new Date();
     const startOfDay = new Date(now.setHours(0, 0, 0, 0));
     const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
     const result = [];
 
-    // const weldBeadForDateRange = await Promise.all(
-    //   allDevices.map(async (device) => {
-    //     const weldings = await prisma.welding.findMany({
-    //       where: {
-    //         weldingId: device.id,
-    //       },
-    //       createdAt: {
-    //         gte: startOfDay,
-    //         lte: endOfDay,
-    //       },
-    //       orderBy: {
-    //         createdAt: 'asc',
-    //       },
-    //     });
-
-    //     if (!weldings) {
-    //       return null;
-    //     }
-
-    //     const weldingsBySquads = sliceSquadWeldings(weldings);
-    //     const teste = someForAllDevicesMinutesWorkorStopping(weldingsBySquads);
-    //     return { prometeus: device.prometeusCode, cycles: teste };
-    //   })
-    // );
-
-    for (const id of arrayDevicesId) {
-      const prometeus = await prisma.prometeus.findUnique({
-        where: { id },
-      });
-
-      if (prometeus) {
-        const specific = await prisma.welding.findMany({
+    const weldBeadForDateRange = await Promise.all(
+      allDevices.map(async (device) => {
+        const weldings = await prisma.welding.findMany({
           where: {
-            weldingId: prometeus.id,
-
+            weldingId: device.id,
             createdAt: {
               gte: startOfDay,
               lte: endOfDay,
@@ -70,21 +38,19 @@ const getAllCicleWorkOrStop = async (req, res) => {
           },
         });
 
-        if (specific.length > 0) {
-          const weldingsBySquads = sliceSquadWeldings(specific);
-          const teste =
-            someForAllDevicesMinutesWorkorStopping(weldingsBySquads);
-          result.push({
-            prometeus: prometeus.prometeusCode,
-            cycles: teste,
-          });
+        if (!weldings) {
+          return null;
         }
-      }
-    }
 
-    res.status(200).json(result);
-    // console.log(weldBeadForDateRange);
-    res.status(200).json(weldBeadForDateRange);
+        const weldingsBySquads = sliceSquadWeldings(weldings);
+        const teste = someForAllDevicesMinutesWorkorStopping(weldingsBySquads);
+        return { prometeus: device.prometeusCode, cycles: teste };
+      })
+    );
+
+    res
+      .status(200)
+      .json(weldBeadForDateRange.filter((item) => item.cycles.length > 0));
   } catch (error) {
     console.log(error);
     res.status(404).json({

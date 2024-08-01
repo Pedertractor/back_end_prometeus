@@ -10,13 +10,13 @@ const lastWeldBeadById = async (req, res) => {
       },
     });
 
-    const idsPrometeus = ids.split(',');
+    // const arrayDevicesId = allDevices.map((item) => item.id);
 
     const lastWeldBeadOccurances = await Promise.all(
-      idsPrometeus.map(async (idPrometeus) => {
+      allDevices.map(async (device) => {
         const lastWeldBead = await prisma.welding.findFirst({
           where: {
-            weldingId: idPrometeus,
+            weldingId: device.id,
           },
           select: {
             capture: true,
