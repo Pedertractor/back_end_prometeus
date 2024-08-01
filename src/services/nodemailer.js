@@ -1,12 +1,14 @@
 const nodemailer = require('nodemailer');
 
+const passEmail = process.env.PWD_EMAIL;
+
 const transport = nodemailer.createTransport({
   service: 'gmail',
   host: 'smtp.gmail.com',
   port: 587,
   auth: {
     user: 'treinamento.ptr@gmail.com',
-    pass: 'htoa steq bpeg psrq',
+    pass: passEmail,
   },
   tls: {
     rejectUnauthorized: false,
