@@ -1,9 +1,6 @@
 const { prisma } = require('../services/prisma');
 
-const {
-  sliceSquadWeldings,
-  getWeldingToday,
-} = require('../helpers/helperGetIntervalWelding');
+const { sliceSquadWeldings } = require('../helpers/helperGetIntervalWelding');
 
 const {
   someMinutesWorkorStopping,
@@ -13,15 +10,21 @@ const {
 
 const getAllCicleWorkOrStop = async (req, res) => {
   try {
-    const { ids } = req.params;
+    const allDevices = await prisma.prometeus.findMany({
+      select: {
+        id: true,
+      },
+    });
 
-    const toDay = new Date().toISOString();
+    const arrayDevicesId = allDevices.map((item) => item.id);
 
-    const idPrometeus = ids.split(',');
+    const now = new Date();
+    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
     const result = [];
 
-    for (const id of idPrometeus) {
+    for (const id of arrayDevicesId) {
       const prometeus = await prisma.prometeus.findUnique({
         where: { id },
       });
@@ -30,6 +33,11 @@ const getAllCicleWorkOrStop = async (req, res) => {
         const specific = await prisma.welding.findMany({
           where: {
             weldingId: prometeus.id,
+
+            createdAt: {
+              gte: startOfDay,
+              lte: endOfDay,
+            },
           },
           orderBy: {
             createdAt: 'asc',
@@ -37,8 +45,7 @@ const getAllCicleWorkOrStop = async (req, res) => {
         });
 
         if (specific.length > 0) {
-          const weldingsToDay = getWeldingToday(specific, toDay);
-          const weldingsBySquads = sliceSquadWeldings(weldingsToDay);
+          const weldingsBySquads = sliceSquadWeldings(specific);
           const teste =
             someForAllDevicesMinutesWorkorStopping(weldingsBySquads);
           result.push({
@@ -48,6 +55,7 @@ const getAllCicleWorkOrStop = async (req, res) => {
         }
       }
     }
+
     res.status(200).json(result);
   } catch (error) {
     console.log(error);
