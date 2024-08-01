@@ -21,8 +21,6 @@ const getAllCicleWorkOrStop = async (req, res) => {
     const startOfDay = new Date(now.setHours(0, 0, 0, 0));
     const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
-    const result = [];
-
     const weldBeadForDateRange = await Promise.all(
       allDevices.map(async (device) => {
         const weldings = await prisma.welding.findMany({
