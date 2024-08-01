@@ -125,8 +125,28 @@ const getCicleWorkOrStop = async (req, res) => {
     const lastDate = data.toISOString();
 
     const idPrometeus = ids.split(',');
+    const idsPrometeus = ids.split(',');
 
     const results = [];
+
+    // const weldingByRange = await Promise.all(
+    //   idsPrometeus.map(async (id) => {
+    //     const weldings = await prisma.welding.findMany({
+    //       where: {
+    //         weldingId: id,
+    //         createdAt: {
+    //           gte: firstDate,
+    //           lte: lastDate,
+    //         },
+    //       },
+    //     });
+
+    //     if(!weldings) {
+    //       return null
+    //     }
+
+    //   })
+    // );
 
     for (const id of idPrometeus) {
       const prometeus = await prisma.prometeus.findUnique({
