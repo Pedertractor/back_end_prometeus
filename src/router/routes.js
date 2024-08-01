@@ -26,8 +26,8 @@ apiRouter.get('/weldings/:id/:first/:last', findWelding);
 apiRouter.get('/specific/:id/:bead', findWeldinBead);
 
 apiRouter.get('/prometeus/weldings/:id/:page/:pageSize', listSquadWeldin);
-apiRouter.get('/lastweldbead/:ids', lastWeldBeadById); //use
-apiRouter.get('/lastcycle/:ids', getAllCicleWorkOrStop); //use
+apiRouter.get('/lastweldbead', lastWeldBeadById); //use
+apiRouter.get('/lastcycle', getAllCicleWorkOrStop); //use
 
 apiRouter.get('/servicecycle/:ids/:first/:last', getCicleWorkOrStop);
 apiRouter.get('/gasconsumption/:ids/:first/:last', getGasConsumptionValues); //use

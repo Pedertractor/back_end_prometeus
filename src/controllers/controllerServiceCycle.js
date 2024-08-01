@@ -10,17 +10,21 @@ const {
 
 const getAllCicleWorkOrStop = async (req, res) => {
   try {
-    const { ids } = req.params;
+    const allDevices = await prisma.prometeus.findMany({
+      select: {
+        id: true,
+      },
+    });
+
+    const arrayDevicesId = allDevices.map((item) => item.id);
 
     const now = new Date();
     const startOfDay = new Date(now.setHours(0, 0, 0, 0));
     const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
-    const idPrometeus = ids.split(',');
-
     const result = [];
 
-    for (const id of idPrometeus) {
+    for (const id of arrayDevicesId) {
       const prometeus = await prisma.prometeus.findUnique({
         where: { id },
       });

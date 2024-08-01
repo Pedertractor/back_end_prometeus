@@ -4,13 +4,17 @@ const { sliceSquadWeldings } = require('../helpers/helperGetIntervalWelding');
 
 const lastWeldBeadById = async (req, res) => {
   try {
-    const { ids } = req.params;
+    const allDevices = await prisma.prometeus.findMany({
+      select: {
+        id: true,
+      },
+    });
 
-    const idPrometeus = ids.split(',');
+    const arrayDevicesId = allDevices.map((item) => item.id);
 
     const result = [];
 
-    for (const id of idPrometeus) {
+    for (const id of arrayDevicesId) {
       const prometeus = await prisma.prometeus.findUnique({
         where: { id },
       });
