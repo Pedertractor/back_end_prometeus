@@ -9,7 +9,7 @@ const {
 const deviceRouter = express.Router();
 
 deviceRouter.post('/newprocess', createdNewProcess);
-deviceRouter.get('/allprocess', getAllProcess); // use
+deviceRouter.get('/allprocess', getAllProcess);
 deviceRouter.get('/findprometeus/:idPrometeus', getProcessById);
 deviceRouter.put('/updateprometeus/:idPrometeus', updateProcess);
 

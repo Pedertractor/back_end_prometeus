@@ -8,9 +8,10 @@ const {
 } = require('../controllers/controllerInfoByWelding');
 
 const {
-  getCicleWorkOrStop,
+  // getCicleWorkOrStop,
   getAllCicleWorkOrStop,
   getGasConsumptionValues,
+  getCiclesWorkByPrometeus,
 } = require('../controllers/controllerServiceCycle');
 
 const { routerStopAnalysis } = require('./stopanalysis');
@@ -29,7 +30,7 @@ apiRouter.get('/prometeus/weldings/:id/:page/:pageSize', listSquadWeldin);
 apiRouter.get('/lastweldbead', lastWeldBeadById); //use
 apiRouter.get('/lastcycle', getAllCicleWorkOrStop); //use
 
-apiRouter.get('/servicecycle/:ids/:first/:last', getCicleWorkOrStop);
+apiRouter.get('/servicecycle/:ids/:first/:last', getCiclesWorkByPrometeus);
 apiRouter.get('/gasconsumption/:ids/:first/:last', getGasConsumptionValues); //use
 
 module.exports = { apiRouter };

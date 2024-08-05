@@ -3,7 +3,7 @@ const { prisma } = require('../services/prisma');
 const { sliceSquadWeldings } = require('../helpers/helperGetIntervalWelding');
 
 const {
-  someMinutesWorkorStopping,
+  // someMinutesWorkorStopping,
   someForAllDevicesMinutesWorkorStopping,
   someForGasConsumption,
 } = require('../helpers/helperCountServiceCycle');
@@ -115,84 +115,198 @@ const getGasConsumptionValues = async (req, res) => {
   }
 };
 
-const getCicleWorkOrStop = async (req, res) => {
+const getCiclesWorkByPrometeus = async (req, res) => {
+  const SECONDS_TO_WORK_IN_ONE_DAY = 8 * 3600 + 56 * 60;
+  const SECONDS_EFFECTIVE_CAPACITY = 7 * 3600 + 56 * 60;
+
+  const { ids, first, last } = req.params;
+
+  const data = new Date(last);
+  data.setDate(data.getDate() + 1);
+
+  const firstDate = new Date(first).toISOString();
+  const lastDate = data.toISOString();
+
+  console.log(firstDate, lastDate);
+  console.log(first, last);
+
+  const idPrometeus = ids.split(',');
+
   try {
-    const { ids, first, last } = req.params;
-    const data = new Date(last);
-    data.setDate(data.getDate() + 1);
-
-    const firstDate = new Date(first).toISOString();
-    const lastDate = data.toISOString();
-
-    const idPrometeus = ids.split(',');
-    const idsPrometeus = ids.split(',');
-
-    const results = [];
-
-    // const weldingByRange = await Promise.all(
-    //   idsPrometeus.map(async (id) => {
-    //     const weldings = await prisma.welding.findMany({
-    //       where: {
-    //         weldingId: id,
-    //         createdAt: {
-    //           gte: firstDate,
-    //           lte: lastDate,
-    //         },
-    //       },
-    //     });
-
-    //     if(!weldings) {
-    //       return null
-    //     }
-
-    //   })
-    // );
-
-    for (const id of idPrometeus) {
-      const prometeus = await prisma.prometeus.findUnique({
-        where: {
-          id,
+    const allDevices = await prisma.prometeus.findMany({
+      where: {
+        id: {
+          in: idPrometeus,
         },
-      });
+      },
+      select: {
+        id: true,
+        prometeusCode: true,
+      },
+    });
 
-      if (prometeus) {
-        const weldings = await prisma.welding.findMany({
-          where: {
-            weldingId: prometeus.id,
-            createdAt: {
-              gte: firstDate,
-              lte: lastDate,
-            },
-          },
-          orderBy: {
-            createdAt: 'asc',
-          },
-        });
+    const allCyclesByDayList = await Promise.all(
+      allDevices.map(async (device) => {
+        const weldingFragmentsTest = await prisma.$queryRaw`
+              SELECT COUNT(*)::integer AS "qtdCordoesDeSolda",
+              "data",
+              SUM("fragmentosWelding")::integer AS "tempoTrabalhado"
+              FROM (
+                SELECT
+                  "capture",
+                  TO_CHAR("createdAt", 'YYYY-MM-DD') AS "data",
+                  COUNT(*)::integer AS "fragmentosWelding"
+                FROM "Welding"
+                WHERE "weldingId" = ${device.id}
+                  AND
+                    "createdAt"
+                  BETWEEN
+                    ${firstDate}::date
+                  AND
+                    ${lastDate}::date
+                GROUP BY "data", "capture"
+              ) AS "aggregated_data"
+              GROUP BY "data"
+              ORDER BY "data"
+            `;
+        console.table(weldingFragmentsTest);
 
-        if (weldings.length > 0) {
-          const weldingBySquads = sliceSquadWeldings(weldings);
-          const reverseWelding = weldingBySquads.reverse();
-          const weldingCycle = someMinutesWorkorStopping(reverseWelding);
+        const totalCycle = {
+          qtdCordoesDeSolda: 0,
+          tempoTrabalhado: 0,
+          tempoParado: 0,
+          porcentagemTrabalhando: 0,
+          porcentagemParado: 0,
+          porcentagemCapacidadeEfetiva: 0,
+        };
 
-          results.push({
-            prometeus: prometeus.prometeusCode,
-            weldingCycle,
-          });
-        }
-      }
-    }
+        const ciclesWorkByIdTeste = weldingFragmentsTest.map(
+          (item, index, arr) => {
+            item.tempoParado =
+              SECONDS_TO_WORK_IN_ONE_DAY - item.tempoTrabalhado;
+            item.porcentagemTrabalhando = parseFloat(
+              (
+                (item.tempoTrabalhado * 100) /
+                SECONDS_TO_WORK_IN_ONE_DAY
+              ).toFixed(2)
+            );
+            item.porcentagemParado = parseFloat(
+              ((item.tempoParado * 100) / SECONDS_TO_WORK_IN_ONE_DAY).toFixed(2)
+            );
+            item.porcentagemCapacidadeEfetiva = parseFloat(
+              (
+                (item.tempoTrabalhado * 100) /
+                SECONDS_EFFECTIVE_CAPACITY
+              ).toFixed(2)
+            );
+            totalCycle.qtdCordoesDeSolda += item.qtdCordoesDeSolda;
+            totalCycle.tempoTrabalhado += item.tempoTrabalhado;
+            totalCycle.tempoParado += item.tempoParado;
 
-    res.status(200).json(results);
+            if (index == arr.length - 1) {
+              totalCycle.porcentagemTrabalhando += item.porcentagemTrabalhando;
+              totalCycle.porcentagemParado += item.porcentagemParado;
+              totalCycle.porcentagemCapacidadeEfetiva +=
+                item.porcentagemCapacidadeEfetiva;
+            }
+
+            return item;
+          }
+        );
+
+        return {
+          prometeus: device.prometeusCode,
+          weldingCycle: [ciclesWorkByIdTeste, [totalCycle]],
+        };
+      })
+    );
+    res.status(200).json(allCyclesByDayList);
   } catch (error) {
-    console.log(error);
     res.status(404).json({
       error: 'erro interno no servidor',
     });
   }
 };
 
+// const getCicleWorkOrStop = async (req, res) => {
+//   try {
+//     const { ids, first, last } = req.params;
+//     const data = new Date(last);
+//     data.setDate(data.getDate() + 1);
+
+//     const firstDate = new Date(first).toISOString();
+//     const lastDate = data.toISOString();
+
+//     const idPrometeus = ids.split(',');
+//     const idsPrometeus = ids.split(',');
+
+//     const results = [];
+
+//     // const weldingByRange = await Promise.all(
+//     //   idsPrometeus.map(async (id) => {
+//     //     const weldings = await prisma.welding.findMany({
+//     //       where: {
+//     //         weldingId: id,
+//     //         createdAt: {
+//     //           gte: firstDate,
+//     //           lte: lastDate,
+//     //         },
+//     //       },
+//     //     });
+
+//     //     if(!weldings) {
+//     //       return null
+//     //     }
+
+//     //   })
+//     // );
+
+//     for (const id of idPrometeus) {
+//       const prometeus = await prisma.prometeus.findUnique({
+//         where: {
+//           id,
+//         },
+//       });
+
+//       if (prometeus) {
+//         const weldings = await prisma.welding.findMany({
+//           where: {
+//             weldingId: prometeus.id,
+//             createdAt: {
+//               gte: firstDate,
+//               lte: lastDate,
+//             },
+//           },
+//           orderBy: {
+//             createdAt: 'asc',
+//           },
+//         });
+
+//         if (weldings.length > 0) {
+//           const weldingBySquads = sliceSquadWeldings(weldings);
+//           const reverseWelding = weldingBySquads.reverse();
+//           const weldingCycle = someMinutesWorkorStopping(reverseWelding);
+
+//           results.push({
+//             prometeus: prometeus.prometeusCode,
+//             weldingCycle,
+//           });
+//         }
+//       }
+//     }
+
+//     res.status(200).json(results);
+//   } catch (error) {
+//     console.log(error);
+//     res.status(404).json({
+//       error: 'erro interno no servidor',
+//     });
+//   }
+// };
+
 module.exports = {
   getGasConsumptionValues,
-  getCicleWorkOrStop,
+  // getCicleWorkOrStop,
   getAllCicleWorkOrStop,
+  getCiclesWorkByPrometeus,
 };
