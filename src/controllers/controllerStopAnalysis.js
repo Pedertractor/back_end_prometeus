@@ -36,7 +36,7 @@ const createWhyProcessStop = async (req, res) => {
 
 const reasonsForStopping = async (req, res) => {
   try {
-    const { idPrometeus, firstDate, lastDate } = req.params;
+    const { prometeusName, firstDate, lastDate } = req.params;
 
     //i use +1 for adquire a correct date, because if i remove +1 the function dont get interval
     const data = new Date(lastDate);
@@ -47,9 +47,15 @@ const reasonsForStopping = async (req, res) => {
 
     console.log(primeriaData, ultimaData);
     if (req.params) {
+      const getIdPrometeus = await prisma.prometeus.findFirst({
+        where: {
+          prometeusCode: prometeusName,
+        },
+      });
+
       const infoStopByPrometeus = await prisma.stopAnalysis.findMany({
         where: {
-          prometeusId: idPrometeus,
+          prometeusId: getIdPrometeus.id,
 
           createdAt: {
             gte: primeriaData,
