@@ -3,6 +3,7 @@ const cors = require('cors');
 const { apiRouter } = require('./router/routes');
 const { initializeWebSocket } = require('./services/websocketService');
 const { runAll } = require('./services/sendWebsocketInfo');
+require('dotenv').config();
 
 const app = express();
 
@@ -16,13 +17,17 @@ app.use((req, res) => {
   res.status(404).json({ error: 'endpoint not fould' });
 });
 
-const teste = app.listen(process.env.PORT, process.env.IP_SERVER, () => {
-  console.log('running!');
-});
+const serverRunning = app.listen(
+  process.env.PORT,
+  process.env.IP_SERVER,
+  () => {
+    console.log(`running! ${process.env.IP_SERVER}:${process.env.PORT}`);
+    console.log(process.env.PORT);
+  }
+);
 
-initializeWebSocket(teste);
+initializeWebSocket(serverRunning);
 
-// return this fucntion when prometeus have datas
 setInterval(() => {
   if (new Date().getHours() >= 5 && new Date().getHours() <= 16) {
     runAll();

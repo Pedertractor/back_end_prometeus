@@ -4,45 +4,59 @@ const { sliceSquadWeldings } = require('../helpers/helperGetIntervalWelding');
 
 const lastWeldBeadById = async (req, res) => {
   try {
-    const { ids } = req.params;
+    const allDevices = await prisma.prometeus.findMany({
+      select: {
+        id: true,
+      },
+    });
 
-    const idPrometeus = ids.split(',');
+    const now = new Date();
+    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
-    const result = [];
-
-    for (const id of idPrometeus) {
-      const prometeus = await prisma.prometeus.findUnique({
-        where: { id },
-      });
-
-      if (prometeus) {
-        const specific = await prisma.welding.findFirst({
+    const lastWeldBeadOccurances = await Promise.all(
+      allDevices.map(async (device) => {
+        const lastWeldBead = await prisma.welding.findFirst({
           where: {
-            weldingId: prometeus.id,
+            weldingId: device.id,
+            createdAt: {
+              gte: startOfDay,
+              lte: endOfDay,
+            },
+          },
+          select: {
+            capture: true,
+            prometeus: {
+              select: {
+                prometeusCode: true,
+              },
+            },
           },
           orderBy: {
             createdAt: 'desc',
           },
         });
 
-        if (specific) {
-          const beadweld = await prisma.welding.findMany({
-            where: {
-              capture: specific.capture,
-            },
-            orderBy: {
-              createdAt: 'asc',
-            },
-          });
-
-          result.push({
-            prometeus: prometeus.prometeusCode,
-            lastWelding: beadweld,
-          });
+        if (!lastWeldBead) {
+          return null;
         }
-      }
-    }
-    res.status(200).json(result);
+
+        const weldBeadFragments = await prisma.welding.findMany({
+          where: { capture: lastWeldBead.capture },
+          select: {
+            amperagem: true,
+            createdAt: true,
+          },
+        });
+
+        return {
+          prometeus: lastWeldBead.prometeus.prometeusCode,
+          lastWelding: weldBeadFragments,
+        };
+      })
+    );
+
+    res.status(200).json(lastWeldBeadOccurances.filter((item) => item != null));
   } catch (error) {
     console.log(error);
     res.status(404).json({
